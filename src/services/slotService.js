@@ -27,6 +27,7 @@ function normalizeSlots(mockData) {
 
     // Add each time slot as a separate entry
     times.forEach((time) => {
+      if (!time || !time.start_time) return; // Skip invalid or missing start_time
       normalized.push({
         date,
         start_time: time.start_time,

@@ -101,8 +101,8 @@ Use tools like `curl` or Postman to test the endpoints:
 
 - The mock API is hosted locally at `http://localhost:3000/mock-external-api/slots` for simplicity.
 - API keys are stored in `src/utils/constants.js` for this demo; in production, they would be in a secure database or environment variables.
-- Query parameters like `provider` require URL encoding (e.g., `Dr.%20Lee`) as per standard HTTP practices.
-- No database is used, as the assignment focuses on API logic and data transformation.
+- Query parameters like `provider` require URL encoding (e.g., Using `%20` to denote blank spaces) as per standard HTTP practices.
+- No database is used, as the focus is on API logic and data transformation.
 - The mock data is static but could be extended with more variability or edge cases.
 
 ## API Structure
@@ -131,9 +131,18 @@ Use tools like `curl` or Postman to test the endpoints:
       ],
       "provider": "Dr. Lee",
       "category": "General"
+    },
+    {
+      "date": "2025-7-22",
+      "times": ["08:00", "09:30"],
+      "doctor": { "name": "Dr. Patel", "id": "d1002" },
+      "extra_field": "should be ignored"
     }
+    // ... additional entries with various formats, edge cases, and malformed data
+    // including empty slots, duplicate entries, missing fields, null values, etc.
   ]
   ```
+- **Note:** The mock API returns a larger and more varied dataset, including messy, non-uniform, and malformed entries to better simulate real-world scenarios.
 
 ### Internal API
 
@@ -147,39 +156,150 @@ Use tools like `curl` or Postman to test the endpoints:
 
 #### Sample Requests and Responses
 
-- **Basic Request (no filters, default pagination):**
+- **Filter by Provider (Dr. Patel):**
 
   ```bash
-  curl -H "X-API-Key: abc123" "http://localhost:3000/api/available-slots"
+  curl -H "X-API-Key: abc123" "http://localhost:3000/api/available-slots?provider=Dr.%20Patel"
   ```
 
-- **Filter by Provider:**
+  **Sample Response:**
+
+  ```json
+  {
+    "data": [
+      { "date": "2025-7-22", "start_time": "08:00", "provider": "Dr. Patel" },
+      { "date": "2025-7-22", "start_time": "09:30", "provider": "Dr. Patel" }
+    ],
+    "total": 2,
+    "page": 1,
+    "limit": 10,
+    "totalPages": 1
+  }
+  ```
+
+- **Filter by Provider (Dr. O'Neil):**
 
   ```bash
-  curl -H "X-API-Key: abc123" "http://localhost:3000/api/available-slots?provider=Dr.%20Lee"
+  curl -H "X-API-Key: abc123" "http://localhost:3000/api/available-slots?provider=Dr.%20O%27Neil"
   ```
 
-- **Filter by Date:**
+  **Sample Response:**
+
+  ```json
+  {
+    "data": [
+      { "date": "2025-07-26", "start_time": "16:00", "provider": "Dr. O'Neil" }
+    ],
+    "total": 1,
+    "page": 1,
+    "limit": 10,
+    "totalPages": 1
+  }
+  ```
+
+- **Filter by Provider (Dr. Gomez, no slots):**
 
   ```bash
-  curl -H "X-API-Key: abc123" "http://localhost:3000/api/available-slots?date=2025-07-21"
+  curl -H "X-API-Key: abc123" "http://localhost:3000/api/available-slots?provider=Dr.%20Gomez"
   ```
 
-- **Filter by Provider and Date:**
+  **Sample Response:**
+
+  ```json
+  {
+    "data": [],
+    "total": 0,
+    "page": 1,
+    "limit": 10,
+    "totalPages": 0
+  }
+  ```
+
+- **Filter by Provider and Date (Dr. Lee, 2025-07-24, duplicate slots):**
 
   ```bash
-  curl -H "X-API-Key: abc123" "http://localhost:3000/api/available-slots?provider=Dr.%20Lee&date=2025-07-21"
+  curl -H "X-API-Key: abc123" "http://localhost:3000/api/available-slots?provider=Dr.%20Lee&date=2025-07-24"
   ```
 
-- **Pagination (page and limit):**
+  **Sample Response:**
 
-  ```bash
-  curl -H "X-API-Key: abc123" "http://localhost:3000/api/available-slots?page=2&limit=1"
+  ```json
+  {
+    "data": [
+      { "date": "2025-07-24", "start_time": "14:00", "provider": "Dr. Lee" },
+      { "date": "2025-07-24", "start_time": "14:00", "provider": "Dr. Lee" }
+    ],
+    "total": 2,
+    "page": 1,
+    "limit": 10,
+    "totalPages": 1
+  }
   ```
 
-- **All Filters and Pagination Combined:**
+- **Malformed Entry (should be skipped):**
+
+  - The entry missing both `date` and `available_on` will not appear in the normalized results.
+
+- **Empty Times Array (Dr. Smith, 2025-07-25):**
+
+  - The entry with an empty `times` array will not produce any slots in the normalized results.
+
+- **All Filters and Pagination Combined (Dr. Lee, 2025-07-21, page=1, limit=1):**
+
   ```bash
   curl -H "X-API-Key: abc123" "http://localhost:3000/api/available-slots?provider=Dr.%20Lee&date=2025-07-21&page=1&limit=1"
+  ```
+
+  **Sample Response:**
+
+  ```json
+  {
+    "data": [
+      { "date": "2025-07-21", "start_time": "10:00", "provider": "Dr. Lee" }
+    ],
+    "total": 2,
+    "page": 1,
+    "limit": 1,
+    "totalPages": 2
+  }
+  ```
+
+- **Entry with times containing a null value (Dr. House):**
+
+  ```bash
+  curl -H "X-API-Key: abc123" "http://localhost:3000/api/available-slots?provider=Dr.%20House"
+  ```
+
+  **Sample Response:**
+
+  ```json
+  {
+    "data": [
+      { "date": "2025-07-29", "start_time": "18:00", "provider": "Dr. House" },
+      { "date": "2025-07-29", "start_time": "19:00", "provider": "Dr. House" }
+    ],
+    "total": 2,
+    "page": 1,
+    "limit": 10,
+    "totalPages": 1
+  }
+  ```
+
+- **Entry with slots containing an object missing start (Dr. Watson):**
+  ```bash
+  curl -H "X-API-Key: abc123" "http://localhost:3000/api/available-slots?provider=Dr.%20Watson"
+  ```
+  **Sample Response:**
+  ```json
+  {
+    "data": [
+      { "date": "2025-07-30", "start_time": "20:00", "provider": "Dr. Watson" }
+    ],
+    "total": 1,
+    "page": 1,
+    "limit": 10,
+    "totalPages": 1
+  }
   ```
 
 #### Error Scenarios
@@ -250,7 +370,7 @@ Use tools like `curl` or Postman to test the endpoints:
 
 ## Potential Improvements
 
-- Use environment variables for API keys and configuration (e.g., with `dotenv`).
 - Add rate limiting to prevent API abuse (e.g., using `express-rate-limit`).
 - Implement sorting for consistent result ordering (e.g., by date and time).
 - Add unit tests with a framework like Jest to ensure reliability.
+- In a production system, a webhook endpoint can be immplemented that third-party PMS systems call whenever appointment slots are updated. The API would process these incoming webhook events to update internal availability in real time, ensuring the platform always reflects the latest schedule.
