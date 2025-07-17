@@ -1,6 +1,7 @@
 const express = require("express");
 const axios = require("axios");
 const { normalizeSlots } = require("./normalizeSlots");
+const authMiddleware = require("./authMiddleware");
 const app = express();
 const port = 3000;
 
@@ -26,8 +27,8 @@ app.get("/mock-external-api/slots", (req, res) => {
   res.json(mockData);
 });
 
-// Internal API endpoint with query filters and pagination
-app.get("/api/available-slots", async (req, res) => {
+// Internal API endpoint with query filters, pagination, and authentication
+app.get("/api/available-slots", authMiddleware, async (req, res) => {
   try {
     // Call the mock PMS endpoint
     const response = await axios.get(
@@ -39,8 +40,10 @@ app.get("/api/available-slots", async (req, res) => {
     const { provider, date } = req.query;
 
     if (provider) {
+      // Decode provider to handle encoded spaces
+      const decodedProvider = decodeURIComponent(provider).replace(/\+/g, " ");
       normalizedData = normalizedData.filter(
-        (slot) => slot.provider.toLowerCase() === provider.toLowerCase()
+        (slot) => slot.provider.toLowerCase() === decodedProvider.toLowerCase()
       );
     }
 
