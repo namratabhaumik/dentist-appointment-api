@@ -26,7 +26,7 @@ app.get("/mock-external-api/slots", (req, res) => {
   res.json(mockData);
 });
 
-// Internal API endpoint with query filters
+// Internal API endpoint with query filters and pagination
 app.get("/api/available-slots", async (req, res) => {
   try {
     // Call the mock PMS endpoint
@@ -45,7 +45,6 @@ app.get("/api/available-slots", async (req, res) => {
     }
 
     if (date) {
-      // Validate date format (YYYY-MM-DD)
       const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
       if (!dateRegex.test(date)) {
         return res
@@ -55,8 +54,29 @@ app.get("/api/available-slots", async (req, res) => {
       normalizedData = normalizedData.filter((slot) => slot.date === date);
     }
 
-    // Return filtered data
-    res.json(normalizedData);
+    // Apply pagination
+    const page = req.query.page ? parseInt(req.query.page) : 1;
+    const limit = req.query.limit ? parseInt(req.query.limit) : 10;
+
+    // Validate pagination parameters
+    if (isNaN(page) || isNaN(limit) || page < 1 || limit < 1) {
+      return res
+        .status(400)
+        .json({ error: "Page and limit must be positive integers" });
+    }
+
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedData = normalizedData.slice(startIndex, endIndex);
+
+    // Return paginated data with metadata
+    res.json({
+      data: paginatedData,
+      total: normalizedData.length,
+      page,
+      limit,
+      totalPages: Math.ceil(normalizedData.length / limit),
+    });
   } catch (error) {
     console.error("Error fetching or normalizing data:", error.message);
     res.status(500).json({ error: "Internal server error" });
