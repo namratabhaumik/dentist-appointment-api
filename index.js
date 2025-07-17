@@ -1,4 +1,6 @@
 const express = require("express");
+const axios = require("axios");
+const { normalizeSlots } = require("./normalizeSlots");
 const app = express();
 const port = 3000;
 
@@ -22,6 +24,26 @@ app.get("/mock-external-api/slots", (req, res) => {
     },
   ];
   res.json(mockData);
+});
+
+// Internal API endpoint
+app.get("/api/available-slots", async (req, res) => {
+  try {
+    // Call the mock PMS endpoint
+    const response = await axios.get(
+      "http://localhost:3000/mock-external-api/slots"
+    );
+    const mockData = response.data;
+
+    // Normalize the data
+    const normalizedData = normalizeSlots(mockData);
+
+    // Return the unified format
+    res.json(normalizedData);
+  } catch (error) {
+    console.error("Error fetching or normalizing data:", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 app.listen(port, () => {
