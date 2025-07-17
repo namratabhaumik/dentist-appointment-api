@@ -1,3 +1,7 @@
+// This function normalizes slot data from multiple external sources.
+// The external API may return data in different formats (legacy and new),
+// so we detect the format and convert it to a unified structure for downstream processing.
+// We skip entries that do not match expected formats to avoid processing malformed data.
 function normalizeSlots(mockData) {
   const normalized = [];
 

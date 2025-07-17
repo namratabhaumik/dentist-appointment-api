@@ -6,7 +6,10 @@ const logger = require("../utils/logger");
 
 const router = express.Router();
 
-// Internal API endpoint with query filters, pagination, and authentication
+// This endpoint fetches and returns available slots with filtering, pagination, and authentication.
+// Strict date validation is enforced to prevent ambiguous input and ensure consistent data processing.
+// Pagination defaults (page=1, limit=10) are chosen to avoid overloading the client or server with large responses.
+// The endpoint structure ensures robust error handling and clear API responses.
 router.get("/available-slots", authMiddleware, async (req, res) => {
   try {
     // Call the mock PMS endpoint

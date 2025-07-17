@@ -1,6 +1,9 @@
 const logger = require("../utils/logger");
 const { VALID_API_KEYS } = require("../utils/constants");
 
+// This middleware enforces API key authentication for protected endpoints.
+// API key auth is used as a simple access control mechanism for demonstration or internal use.
+// It is not suitable for production-grade security, but provides basic protection for this API.
 function authMiddleware(req, res, next) {
   const apiKey = req.header("X-API-Key");
 
