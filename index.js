@@ -2,6 +2,7 @@ const express = require("express");
 const axios = require("axios");
 const { normalizeSlots } = require("./normalizeSlots");
 const authMiddleware = require("./authMiddleware");
+const logger = require("./logger");
 const app = express();
 const port = 3000;
 
@@ -24,6 +25,7 @@ app.get("/mock-external-api/slots", (req, res) => {
       category: "General",
     },
   ];
+  logger.info("Mock API /mock-external-api/slots called");
   res.json(mockData);
 });
 
@@ -40,19 +42,19 @@ app.get("/api/available-slots", authMiddleware, async (req, res) => {
     const { provider, date } = req.query;
 
     if (provider) {
-      // Decode provider to handle encoded spaces
-      const decodedProvider = decodeURIComponent(provider).replace(/\+/g, " ");
       normalizedData = normalizedData.filter(
-        (slot) => slot.provider.toLowerCase() === decodedProvider.toLowerCase()
+        (slot) => slot.provider.toLowerCase() === provider.toLowerCase()
       );
     }
 
     if (date) {
       const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
       if (!dateRegex.test(date)) {
-        return res
-          .status(400)
-          .json({ error: "Invalid date format. Use YYYY-MM-DD" });
+        logger.warn(`Invalid date format: ${date}`);
+        return res.status(400).json({
+          error: "Invalid date format. Use YYYY-MM-DD",
+          code: "INVALID_DATE",
+        });
       }
       normalizedData = normalizedData.filter((slot) => slot.date === date);
     }
@@ -63,14 +65,24 @@ app.get("/api/available-slots", authMiddleware, async (req, res) => {
 
     // Validate pagination parameters
     if (isNaN(page) || isNaN(limit) || page < 1 || limit < 1) {
-      return res
-        .status(400)
-        .json({ error: "Page and limit must be positive integers" });
+      logger.warn(
+        `Invalid pagination parameters: page=${req.query.page}, limit=${req.query.limit}`
+      );
+      return res.status(400).json({
+        error: "Page and limit must be positive integers",
+        code: "INVALID_PAGINATION",
+      });
     }
 
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
     const paginatedData = normalizedData.slice(startIndex, endIndex);
+
+    // Log successful request
+    logger.info(`Successfully processed /api/available-slots`, {
+      query: req.query,
+      resultCount: paginatedData.length,
+    });
 
     // Return paginated data with metadata
     res.json({
@@ -81,11 +93,17 @@ app.get("/api/available-slots", authMiddleware, async (req, res) => {
       totalPages: Math.ceil(normalizedData.length / limit),
     });
   } catch (error) {
-    console.error("Error fetching or normalizing data:", error.message);
-    res.status(500).json({ error: "Internal server error" });
+    logger.error("Error fetching or normalizing data", {
+      message: error.message,
+      stack: error.stack,
+    });
+    res.status(500).json({
+      error: "Internal server error",
+      code: "SERVER_ERROR",
+    });
   }
 });
 
 app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+  logger.info(`Server running at http://localhost:${port}`);
 });
