@@ -35,7 +35,7 @@ dentist-appointment-api/
 │   └── app.log                       # Winston log file
 │
 ├── tests/
-│   └── slotService.test.js           # Test for normalization logic
+│   └── (test files can be added here for future unit testing)
 │
 ├── .env                              # Environment variables (API keys, port)
 ├── .gitignore
