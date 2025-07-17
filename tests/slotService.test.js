@@ -1,6 +1,4 @@
-//A temporary test file to test out the normalization function
-
-const { normalizeSlots } = require("./normalizeSlots");
+const { normalizeSlots } = require("../src/services/slotService");
 
 const mockData = [
   {

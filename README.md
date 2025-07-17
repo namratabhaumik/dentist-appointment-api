@@ -13,6 +13,38 @@ This project implements a backend service that simulates integration with a thir
   - **Basic Authentication**: Requires an `X-API-Key` header with valid keys (`abc123` or `xyz789`).
   - **Error Handling and Logging**: Logs requests, errors, and warnings to console and `logs/app.log` using Winston.
 
+## Project Structure
+
+```
+dentist-appointment-api/
+│
+├── src/
+│   ├── api/
+│   │   ├── availableSlots.js         # Internal API route/controller
+│   │   └── mockExternalApi.js        # Mock external API route/controller
+│   ├── middlewares/
+│   │   └── auth.js                   # Authentication middleware
+│   ├── services/
+│   │   └── slotService.js            # Data normalization and business logic
+│   ├── utils/
+│   │   ├── logger.js                 # Winston logger setup
+│   │   └── constants.js              # API keys and other constants
+│   └── app.js                        # Express app setup (routes, middleware)
+│
+├── logs/
+│   └── app.log                       # Winston log file
+│
+├── tests/
+│   └── slotService.test.js           # Test for normalization logic
+│
+├── .env                              # Environment variables (API keys, port)
+├── .gitignore
+├── package.json
+├── package-lock.json
+├── README.md
+└── server.js                         # Entry point (loads app.js, starts server)
+```
+
 ## Setup Instructions
 
 ### Prerequisites
@@ -34,9 +66,9 @@ This project implements a backend service that simulates integration with a thir
    ```
 3. Start the server:
    ```bash
-   node index.js
+   node server.js
    ```
-4. The server will run at `http://localhost:3000`.
+4. The server will run at `http://localhost:3000` (or the port set in `.env`).
 
 ### Testing the API
 
@@ -55,7 +87,7 @@ Use tools like `curl` or Postman to test the endpoints:
 ### Approach
 
 - **Tech Stack**: Built with Node.js and Express for a lightweight, scalable backend. Used `axios` for HTTP requests and `winston` for logging.
-- **Modular Design**: Separated concerns into `index.js` (server and routes), `normalizeSlots.js` (data normalization), `authMiddleware.js` (authentication), and `logger.js` (logging configuration).
+- **Modular Design**: Separated concerns into `src/api/` (routes), `src/services/` (data normalization), `src/middlewares/` (authentication), and `src/utils/` (logging and constants).
 - **Mock API**: Simulates a third-party PMS with two inconsistent data formats (one with `date/times/doctor`, another with `available_on/slots/provider`) to mimic real-world variability.
 - **Normalization**: Handles both formats, converting them into a unified structure with `date`, `start_time`, and `provider` fields. Validates dates and skips invalid entries.
 - **Internal API**: Fetches data from the mock API, applies normalization, and supports filtering and pagination. Returns structured responses with metadata.
@@ -68,7 +100,7 @@ Use tools like `curl` or Postman to test the endpoints:
 ### Assumptions
 
 - The mock API is hosted locally at `http://localhost:3000/mock-external-api/slots` for simplicity.
-- API keys are stored in-memory (`authMiddleware.js`) for this demo; in production, they would be in a secure database or environment variables.
+- API keys are stored in `src/utils/constants.js` for this demo; in production, they would be in a secure database or environment variables.
 - Query parameters like `provider` require URL encoding (e.g., `Dr.%20Lee`) as per standard HTTP practices.
 - No database is used, as the assignment focuses on API logic and data transformation.
 - The mock data is static but could be extended with more variability or edge cases.

@@ -16,6 +16,6 @@ yarn-error.log*
 Thumbs.db
 
 # Optional: environment files
-#.env
-#.env.*
+.env
+.env.*
 

@@ -1,36 +1,13 @@
 const express = require("express");
 const axios = require("axios");
-const { normalizeSlots } = require("./normalizeSlots");
-const authMiddleware = require("./authMiddleware");
-const logger = require("./logger");
-const app = express();
-const port = 3000;
+const { normalizeSlots } = require("../services/slotService");
+const authMiddleware = require("../middlewares/auth");
+const logger = require("../utils/logger");
 
-// Mock third-party API endpoint
-app.get("/mock-external-api/slots", (req, res) => {
-  const mockData = [
-    {
-      date: "2025-07-20",
-      times: ["09:00", "10:30", "13:15"],
-      doctor: { name: "Dr. Smith", id: "d1001" },
-      type: "NewPatient",
-    },
-    {
-      available_on: "2025/07/21",
-      slots: [
-        { start: "10:00", end: "10:30" },
-        { start: "11:00", end: "11:30" },
-      ],
-      provider: "Dr. Lee",
-      category: "General",
-    },
-  ];
-  logger.info("Mock API /mock-external-api/slots called");
-  res.json(mockData);
-});
+const router = express.Router();
 
 // Internal API endpoint with query filters, pagination, and authentication
-app.get("/api/available-slots", authMiddleware, async (req, res) => {
+router.get("/available-slots", authMiddleware, async (req, res) => {
   try {
     // Call the mock PMS endpoint
     const response = await axios.get(
@@ -104,6 +81,4 @@ app.get("/api/available-slots", authMiddleware, async (req, res) => {
   }
 });
 
-app.listen(port, () => {
-  logger.info(`Server running at http://localhost:${port}`);
-});
+module.exports = router;
