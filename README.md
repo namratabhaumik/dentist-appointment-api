@@ -1,0 +1,141 @@
+# Dentist Appointment Sync API
+
+This project implements a backend service that simulates integration with a third-party dental practice management system (PMS). The service provides a mock API, normalizes its inconsistent data, and exposes a clean internal API with additional features like query filters, pagination, authentication, and logging.
+
+## Features
+
+- **Mock Third-Party API**: Simulates a PMS endpoint at `/mock-external-api/slots` with two inconsistent data formats.
+- **Data Normalization**: Converts the mock API's inconsistent data into a unified format.
+- **Internal API**: Exposes a clean endpoint at `/api/available-slots` that fetches, normalizes, and returns appointment slots.
+- **Bonus Features**:
+  - **Query Filters**: Supports filtering by `provider` (e.g., `?provider=Dr.%20Lee`) and `date` (e.g., `?date=2025-07-21`).
+  - **Pagination**: Supports `page` and `limit` query parameters (e.g., `?page=1&limit=2`) with metadata (total, page, limit, totalPages).
+  - **Basic Authentication**: Requires an `X-API-Key` header with valid keys (`abc123` or `xyz789`).
+  - **Error Handling and Logging**: Logs requests, errors, and warnings to console and `logs/app.log` using Winston.
+
+## Setup Instructions
+
+### Prerequisites
+
+- Node.js (version 14 or higher)
+- npm (included with Node.js)
+- Git (optional, for cloning the repository)
+
+### Installation
+
+1. Clone the repository (or download the source):
+   ```bash
+   git clone https://github.com/namratabhaumik/dentist-appointment-api.git
+   cd dentist-appointment-api
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the server:
+   ```bash
+   node index.js
+   ```
+4. The server will run at `http://localhost:3000`.
+
+### Testing the API
+
+Use tools like `curl` or Postman to test the endpoints:
+
+- **Mock API**: `curl http://localhost:3000/mock-external-api/slots`
+- **Internal API** (requires API key):
+  ```bash
+  curl -H "X-API-Key: abc123" "http://localhost:3000/api/available-slots?page=1&limit=2"
+  ```
+  - With filters: `curl -H "X-API-Key: abc123" "http://localhost:3000/api/available-slots?provider=Dr.%20Lee&date=2025-07-21"`
+- Logs are written to `logs/app.log`.
+
+## Approach and Assumptions
+
+### Approach
+
+- **Tech Stack**: Built with Node.js and Express for a lightweight, scalable backend. Used `axios` for HTTP requests and `winston` for logging.
+- **Modular Design**: Separated concerns into `index.js` (server and routes), `normalizeSlots.js` (data normalization), `authMiddleware.js` (authentication), and `logger.js` (logging configuration).
+- **Mock API**: Simulates a third-party PMS with two inconsistent data formats (one with `date/times/doctor`, another with `available_on/slots/provider`) to mimic real-world variability.
+- **Normalization**: Handles both formats, converting them into a unified structure with `date`, `start_time`, and `provider` fields. Validates dates and skips invalid entries.
+- **Internal API**: Fetches data from the mock API, applies normalization, and supports filtering and pagination. Returns structured responses with metadata.
+- **Bonus Features**:
+  - Query filters handle case-insensitive provider names and validate date formats.
+  - Pagination includes metadata for total items and pages.
+  - Authentication uses a simple API key system for security.
+  - Logging captures request details, errors, and warnings for debugging.
+
+### Assumptions
+
+- The mock API is hosted locally at `http://localhost:3000/mock-external-api/slots` for simplicity.
+- API keys are stored in-memory (`authMiddleware.js`) for this demo; in production, they would be in a secure database or environment variables.
+- Query parameters like `provider` require URL encoding (e.g., `Dr.%20Lee`) as per standard HTTP practices.
+- No database is used, as the assignment focuses on API logic and data transformation.
+- The mock data is static but could be extended with more variability or edge cases.
+
+## API Structure
+
+### Mock API
+
+- **Endpoint**: `GET /mock-external-api/slots`
+- **Response**: JSON array with two inconsistent formats:
+  ```json
+  [
+    {
+      "date": "2025-07-20",
+      "times": ["09:00", "10:30", "13:15"],
+      "doctor": { "name": "Dr. Smith", "id": "d1001" },
+      "type": "NewPatient"
+    },
+    {
+      "available_on": "2025/07/21",
+      "slots": [
+        { "start": "10:00", "end": "10:30" },
+        { "start": "11:00", "end": "11:30" }
+      ],
+      "provider": "Dr. Lee",
+      "category": "General"
+    }
+  ]
+  ```
+
+### Internal API
+
+- **Endpoint**: `GET /api/available-slots`
+- **Headers**: `X-API-Key: abc123` (or `xyz789`)
+- **Query Parameters**:
+  - `provider` (optional): Filter by provider name (e.g., `Dr.%20Lee`).
+  - `date` (optional): Filter by date (YYYY-MM-DD).
+  - `page` (optional): Page number (default: 1).
+  - `limit` (optional): Items per page (default: 10).
+- **Response**: JSON object with paginated data and metadata:
+  ```json
+  {
+    "data": [
+      { "date": "2025-07-20", "start_time": "09:00", "provider": "Dr. Smith" },
+      { "date": "2025-07-20", "start_time": "10:30", "provider": "Dr. Smith" }
+    ],
+    "total": 5,
+    "page": 1,
+    "limit": 2,
+    "totalPages": 3
+  }
+  ```
+- **Error Responses**:
+  - 400: Invalid date or pagination parameters (e.g., `{"error": "Invalid date format. Use YYYY-MM-DD", "code": "INVALID_DATE"}`).
+  - 401: Missing or invalid API key (e.g., `{"error": "Invalid API key", "code": "INVALID_API_KEY"}`).
+  - 500: Server errors (e.g., `{"error": "Internal server error", "code": "SERVER_ERROR"}`).
+
+## Bonus Features Implemented
+
+- **Query Filters**: Supports filtering by provider and date with case-insensitive provider matching and date format validation.
+- **Pagination**: Implements pagination with `page` and `limit` parameters, including metadata for total items and pages.
+- **Authentication**: Enforces API key validation via the `X-API-Key` header.
+- **Error Handling and Logging**: Uses Winston to log requests, warnings, and errors to console and `logs/app.log` with timestamps and structured data.
+
+## Potential Improvements
+
+- Use environment variables for API keys and configuration (e.g., with `dotenv`).
+- Add rate limiting to prevent API abuse (e.g., using `express-rate-limit`).
+- Implement sorting for consistent result ordering (e.g., by date and time).
+- Add unit tests with a framework like Jest to ensure reliability.
