@@ -110,7 +110,11 @@ Use tools like `curl` or Postman to test the endpoints:
 ### Mock API
 
 - **Endpoint**: `GET /mock-external-api/slots`
-- **Response**: JSON array with two inconsistent formats:
+- **Sample Request:**
+  ```bash
+  curl http://localhost:3000/mock-external-api/slots
+  ```
+- **Sample Response:**
   ```json
   [
     {
@@ -140,23 +144,102 @@ Use tools like `curl` or Postman to test the endpoints:
   - `date` (optional): Filter by date (YYYY-MM-DD).
   - `page` (optional): Page number (default: 1).
   - `limit` (optional): Items per page (default: 10).
-- **Response**: JSON object with paginated data and metadata:
+
+#### Sample Requests and Responses
+
+- **Basic Request (no filters, default pagination):**
+
+  ```bash
+  curl -H "X-API-Key: abc123" "http://localhost:3000/api/available-slots"
+  ```
+
+- **Filter by Provider:**
+
+  ```bash
+  curl -H "X-API-Key: abc123" "http://localhost:3000/api/available-slots?provider=Dr.%20Lee"
+  ```
+
+- **Filter by Date:**
+
+  ```bash
+  curl -H "X-API-Key: abc123" "http://localhost:3000/api/available-slots?date=2025-07-21"
+  ```
+
+- **Filter by Provider and Date:**
+
+  ```bash
+  curl -H "X-API-Key: abc123" "http://localhost:3000/api/available-slots?provider=Dr.%20Lee&date=2025-07-21"
+  ```
+
+- **Pagination (page and limit):**
+
+  ```bash
+  curl -H "X-API-Key: abc123" "http://localhost:3000/api/available-slots?page=2&limit=1"
+  ```
+
+- **All Filters and Pagination Combined:**
+  ```bash
+  curl -H "X-API-Key: abc123" "http://localhost:3000/api/available-slots?provider=Dr.%20Lee&date=2025-07-21&page=1&limit=1"
+  ```
+
+#### Error Scenarios
+
+- **Missing API Key:**
+
+  ```bash
+  curl "http://localhost:3000/api/available-slots"
+  ```
+
+  **Expected Response:**
+
   ```json
   {
-    "data": [
-      { "date": "2025-07-20", "start_time": "09:00", "provider": "Dr. Smith" },
-      { "date": "2025-07-20", "start_time": "10:30", "provider": "Dr. Smith" }
-    ],
-    "total": 5,
-    "page": 1,
-    "limit": 2,
-    "totalPages": 3
+    "error": "API key is required",
+    "code": "MISSING_API_KEY"
   }
   ```
-- **Error Responses**:
-  - 400: Invalid date or pagination parameters (e.g., `{"error": "Invalid date format. Use YYYY-MM-DD", "code": "INVALID_DATE"}`).
-  - 401: Missing or invalid API key (e.g., `{"error": "Invalid API key", "code": "INVALID_API_KEY"}`).
-  - 500: Server errors (e.g., `{"error": "Internal server error", "code": "SERVER_ERROR"}`).
+
+- **Invalid API Key:**
+
+  ```bash
+  curl -H "X-API-Key: wrongkey" "http://localhost:3000/api/available-slots"
+  ```
+
+  **Expected Response:**
+
+  ```json
+  {
+    "error": "Invalid API key",
+    "code": "INVALID_API_KEY"
+  }
+  ```
+
+- **Invalid Date Format:**
+
+  ```bash
+  curl -H "X-API-Key: abc123" "http://localhost:3000/api/available-slots?date=21-07-2025"
+  ```
+
+  **Expected Response:**
+
+  ```json
+  {
+    "error": "Invalid date format. Use YYYY-MM-DD",
+    "code": "INVALID_DATE"
+  }
+  ```
+
+- **Invalid Pagination Parameters:**
+  ```bash
+  curl -H "X-API-Key: abc123" "http://localhost:3000/api/available-slots?page=0&limit=-5"
+  ```
+  **Expected Response:**
+  ```json
+  {
+    "error": "Page and limit must be positive integers",
+    "code": "INVALID_PAGINATION"
+  }
+  ```
 
 ## Bonus Features Implemented
 
