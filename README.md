@@ -35,7 +35,7 @@ dentist-appointment-api/
 │   └── app.log                       # Winston log file
 │
 ├── tests/
-│   └── (test files can be added here for future unit testing)
+│   └── slotService.test.js           # Jest unit tests for normalization logic
 │
 ├── .env                              # Environment variables (API keys, port)
 ├── .gitignore
@@ -69,6 +69,11 @@ dentist-appointment-api/
    node server.js
    ```
 4. The server will run at `http://localhost:3000` (or the port set in `.env`).
+
+5. Run tests (optional):
+   ```bash
+   npm test
+   ```
 
 ### Testing the API
 
@@ -372,5 +377,4 @@ Use tools like `curl` or Postman to test the endpoints:
 
 - Add rate limiting to prevent API abuse (e.g., using `express-rate-limit`).
 - Implement sorting for consistent result ordering (e.g., by date and time).
-- Add unit tests with a framework like Jest to ensure reliability.
 - In a production system, a webhook endpoint can be immplemented that third-party PMS systems call whenever appointment slots are updated. The API would process these incoming webhook events to update internal availability in real time, ensuring the platform always reflects the latest schedule.
